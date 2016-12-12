@@ -22,6 +22,7 @@ namespace monitor
     //        while (true)
     //        {
     //            Console.WriteLine("Internet Explorer: ");
+
     //            (new List<browserlocation.URLDetails>(browserlocation.InternetExplorer())).ForEach(u =>
     //            {
     //                Console.WriteLine("[{0}]\r\n{1}\r\n", u.Title, u.URL);
