@@ -10,6 +10,7 @@ using System.Runtime.InteropServices;
 using System.Timers;
 using Harvest;
 using System.ComponentModel;
+using SolutionLibrary.Classes;
 
 namespace monitor
 {
@@ -182,7 +183,9 @@ namespace monitor
                 {
                     _processo = value;
                     BrowserURLUltimoGravado = BrowserURL;
-                    Console.WriteLine(_processo.ToString() + " - " + ProcessoNome + " - " + BrowserURL);
+                    Task t = new Task(() => Update());
+                    t.Start();
+                    //Console.WriteLine(_processo.ToString() + " - " + ProcessoNome + " - " + BrowserURL);
 
                     //System.IO.File.AppendAllText(@"C:\Users\Ivan\Desktop\new 4.txt", _processo.ToString() + " - " + ProcessoNome + " - " + BrowserURL + '\n');
                 }
@@ -191,8 +194,21 @@ namespace monitor
         }
         public static string ProcessoNome { get; set; }
         public static string BrowserURL { get; set; }
-
         private static string BrowserURLUltimoGravado { get; set; }
+        public static ConexaoDB Database { get; set; }
+
+        private static async void Update()
+        {
+            //string[] fields = { "s13status",
+            //                    "s13publicacaodatahora",
+            //                    "s13publicacaousuario"};
+            //string[] values = { "'L'",
+            //                    "'" + DateTime.Now.Day.ToString().PadLeft(2, '0') + "/" + DateTime.Now.Month.ToString().PadLeft(2, '0') + "/" + DateTime.Now.Year.ToString() + " " + DateTime.Now.Hour.ToString().PadLeft(2, '0') + ":" + DateTime.Now.Minute.ToString().PadLeft(2, '0') + "'",
+            //                    "'" + Config.usuario + "'"};
+            //string where = "s13numero = '" + Config.versaoExtenso.Trim() + "'";
+            //Database.update("versao", fields, values, where);
+        }
+
 
 
     }
@@ -206,6 +222,7 @@ namespace monitor
             IntPtr hWnd = GetForegroundWindow();
             string url = string.Empty;
             var task = new Task(() => atualizaProcesso(procId, proc.ProcessName, url));
+            //ProcessoAtivo.Database = new ConexaoDB("192.168.9.20", "5433", "postgres", "wherewithal", "sol_sacsolution", true, MsgType.Msg);
             while (true)
             {
 

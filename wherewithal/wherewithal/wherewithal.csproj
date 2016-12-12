@@ -37,9 +37,15 @@
       <HintPath>..\packages\Harvest.Net.0.17.0\lib\net45\Harvest.Net.dll</HintPath>
       <Private>True</Private>
     </Reference>
+    <Reference Include="Npgsql">
+      <HintPath>..\..\..\..\..\Desktop\Npgsql.dll</HintPath>
+    </Reference>
     <Reference Include="RestSharp, Version=105.2.2.0, Culture=neutral, processorArchitecture=MSIL">
       <HintPath>..\packages\RestSharp.105.2.2\lib\net452\RestSharp.dll</HintPath>
       <Private>True</Private>
+    </Reference>
+    <Reference Include="SolutionLibrary">
+      <HintPath>..\..\..\..\..\Desktop\SolutionLibrary.dll</HintPath>
     </Reference>
     <Reference Include="System" />
     <Reference Include="System.Core" />
