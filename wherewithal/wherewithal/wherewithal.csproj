@@ -37,6 +37,9 @@
       <HintPath>..\packages\Harvest.Net.0.17.0\lib\net45\Harvest.Net.dll</HintPath>
       <Private>True</Private>
     </Reference>
+    <Reference Include="Mono.Security">
+      <HintPath>..\..\..\..\..\Desktop\Mono.Security.dll</HintPath>
+    </Reference>
     <Reference Include="Npgsql">
       <HintPath>..\..\..\..\..\Desktop\Npgsql.dll</HintPath>
     </Reference>

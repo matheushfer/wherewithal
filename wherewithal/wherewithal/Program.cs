@@ -153,7 +153,7 @@ namespace monitor
 
         }
     }*/
-    public static class ProcessoAtivo
+    public static class Monitor
     {
         /*private uint _processoID;
         public uint ProcessoID
@@ -183,7 +183,7 @@ namespace monitor
                 {
                     _processo = value;
                     BrowserURLUltimoGravado = BrowserURL;
-                    Task t = new Task(() => Update());
+                    Task t = new Task(() => Insert());
                     t.Start();
                     //Console.WriteLine(_processo.ToString() + " - " + ProcessoNome + " - " + BrowserURL);
 
@@ -196,17 +196,19 @@ namespace monitor
         public static string BrowserURL { get; set; }
         private static string BrowserURLUltimoGravado { get; set; }
         public static ConexaoDB Database { get; set; }
-
-        private static async void Update()
+        public static string NomeEstacao { get; set; }
+        private static async void Insert()
         {
-            //string[] fields = { "s13status",
-            //                    "s13publicacaodatahora",
-            //                    "s13publicacaousuario"};
-            //string[] values = { "'L'",
-            //                    "'" + DateTime.Now.Day.ToString().PadLeft(2, '0') + "/" + DateTime.Now.Month.ToString().PadLeft(2, '0') + "/" + DateTime.Now.Year.ToString() + " " + DateTime.Now.Hour.ToString().PadLeft(2, '0') + ":" + DateTime.Now.Minute.ToString().PadLeft(2, '0') + "'",
-            //                    "'" + Config.usuario + "'"};
-            //string where = "s13numero = '" + Config.versaoExtenso.Trim() + "'";
-            //Database.update("versao", fields, values, where);
+            string[] fields = { "estacao",
+                                "processo",
+                                "url"/*,
+                                "datahorainicio"*/};
+            string[] values = { "'" + NomeEstacao.Trim() + "'",
+                                "'" + ProcessoNome.Trim() + "'",
+                                "'" + BrowserURL.Trim() + "'"/*,
+                                "'" + DateTime.Now.Day.ToString().PadLeft(2, '0') + "/" + DateTime.Now.Month.ToString().PadLeft(2, '0') + "/" + DateTime.Now.Year.ToString() + " " + DateTime.Now.Hour.ToString().PadLeft(2, '0') + ":" + DateTime.Now.Minute.ToString().PadLeft(2, '0') + ":" + DateTime.Now.Second.ToString().PadLeft(2, '0') + "'" */};
+            //string where = "";
+            Database.insert("atividade", fields, values);
         }
 
 
@@ -222,9 +224,14 @@ namespace monitor
             IntPtr hWnd = GetForegroundWindow();
             string url = string.Empty;
             var task = new Task(() => atualizaProcesso(procId, proc.ProcessName, url));
-            //ProcessoAtivo.Database = new ConexaoDB("192.168.9.20", "5433", "postgres", "wherewithal", "sol_sacsolution", true, MsgType.Msg);
+            Monitor.Database = new ConexaoDB("192.168.9.20", "5433", "postgres", "wherewithal", "wherewithal", true, MsgType.Msg);
+            Monitor.NomeEstacao = Environment.MachineName;
             while (true)
             {
+                //(new List<browserlocation.URLDetails>(browserlocation.InternetExplorer())).ForEach(u =>
+                //            {
+                //                Console.WriteLine("[{0}]\r\n{1}\r\n", u.Title, u.URL);
+                //            });
 
                 hWnd = GetForegroundWindow();
                 procId = 0;
@@ -232,9 +239,23 @@ namespace monitor
                 proc = Process.GetProcessById((int)procId);
 
                 //Console.WriteLine(proc.MainModule);
-                if (proc.ProcessName.Equals("firefox") || proc.ProcessName.Equals("chrome"))
+                if (proc.ProcessName.Equals("firefox") || proc.ProcessName.Equals("chrome")/* || proc.ProcessName.Equals("iexplore")*/) // IE está pegando os endereços de todas as abas, não apenas a que está em foco
                 {
-                    url = GetChromeUrl(proc);
+                    url = string.Empty;
+
+                    if (proc.ProcessName.Equals("iexplore"))
+                    {
+                        (new List<URLDetails>(InternetExplorer())).ForEach(u =>
+                        {
+                            url += u.URL;
+                            //Console.WriteLine("[{0}]\r\n{1}\r\n", u.Title, u.URL);
+                        });
+                    }
+                    else
+                    {
+                        url = GetChromeUrl(proc);
+                    }
+                    
                     if (url == null)
                         continue;
                     url = url.ToLower();
@@ -250,6 +271,8 @@ namespace monitor
                 {
                     url = string.Empty;
                 }
+
+
                 task = new Task(() => atualizaProcesso(procId, proc.ProcessName, url));
                 task.Start();
 
@@ -261,9 +284,9 @@ namespace monitor
         }
         public static async Task atualizaProcesso(uint processoID = 0, string processoNome = "", string browserURL = "")
         {
-            ProcessoAtivo.ProcessoNome = processoNome;
-            ProcessoAtivo.BrowserURL = browserURL;
-            ProcessoAtivo.ProcessoID = processoID;
+            Monitor.ProcessoNome = processoNome;
+            Monitor.BrowserURL = browserURL;
+            Monitor.ProcessoID = processoID;
         }
         public struct URLDetails
         {
@@ -275,13 +298,33 @@ namespace monitor
             Process[] pname = Process.GetProcessesByName("iexplore");
             if (pname.Length == 0)
             {
-                Console.Write("Process is not running ");
+                return null;
             }
 
             System.Collections.Generic.List<URLDetails> URLs = new System.Collections.Generic.List<URLDetails>();
             var shellWindows = new SHDocVw.ShellWindows();
             foreach (SHDocVw.InternetExplorer ie in shellWindows)
-                URLs.Add(new URLDetails() { URL = ie.LocationURL, Title = ie.LocationName });
+            {
+                
+                if (ie.Name.Contains("Internet Explorer"))
+                {
+                    //Console.WriteLine("");
+                    //Console.WriteLine("IE:");
+                    //Console.WriteLine("LocationName:" + ie.LocationName);
+                    //Console.WriteLine("LocationURL:" + ie.LocationURL);
+                    //Console.WriteLine("AddressBar:" + ie.AddressBar);
+                    //Console.WriteLine("Application:" + ie.Application);
+                    //Console.WriteLine("Document:" + ie.Document);
+                    //Console.WriteLine("FullName:" + ie.FullName);
+                    //Console.WriteLine("Name:" + ie.Name);
+                    //Console.WriteLine("Parent:" + ie.Parent);
+                    //Console.WriteLine("Path:" + ie.Path);
+                    //Console.WriteLine("Visible:" + ie.Visible);
+                    URLs.Add(new URLDetails() { URL = ie.LocationURL, Title = ie.LocationName });
+                }
+                
+            }
+                
             return URLs.ToArray();
         }
         public static string GetChromeUrl(Process process)
