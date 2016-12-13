@@ -197,6 +197,7 @@ namespace monitor
         private static string BrowserURLUltimoGravado { get; set; }
         public static ConexaoDB Database { get; set; }
         public static string NomeEstacao { get; set; }
+        public static Boolean graveiStartBuild { get; set; }
         private static async void Insert()
         {
             string[] fields = { "estacao",
@@ -226,6 +227,8 @@ namespace monitor
             var task = new Task(() => atualizaProcesso(procId, proc.ProcessName, url));
             Monitor.Database = new ConexaoDB("192.168.9.20", "5433", "postgres", "wherewithal", "wherewithal", true, MsgType.Msg);
             Monitor.NomeEstacao = Environment.MachineName;
+            Monitor.graveiStartBuild = false;
+            DateTime dataHoraBuildMaisVelho = DateTime.MaxValue;
             while (true)
             {
                 //(new List<browserlocation.URLDetails>(browserlocation.InternetExplorer())).ForEach(u =>
@@ -255,7 +258,7 @@ namespace monitor
                     {
                         url = GetChromeUrl(proc);
                     }
-                    
+
                     if (url == null)
                         continue;
                     url = url.ToLower();
@@ -276,6 +279,38 @@ namespace monitor
                 task = new Task(() => atualizaProcesso(procId, proc.ProcessName, url));
                 task.Start();
 
+                /*Process[] localByName = Process.GetProcessesByName("MSBuild");
+                
+                if (localByName.Count() > 0)
+                {
+                    if (Monitor.graveiStartBuild == false)
+                    {
+                        procId = 0;
+                        foreach (Process item in localByName)
+                        {
+                            if (procId < item.Id)
+                            {
+                                procId = (uint)item.Id;
+                                dataHoraBuildMaisVelho = item.StartTime;
+                            }
+                                
+                        }
+                        task = new Task(() => compileStart(localByName[0].ProcessName, dataHoraBuildMaisVelho));
+                        task.Start();
+                        Monitor.graveiStartBuild = true;
+                    }
+                }
+                else
+                {
+                    if (Monitor.graveiStartBuild == true)
+                    {
+                        task = new Task(() => compileStop(DateTime.Now));
+                        task.Start();
+                        Monitor.graveiStartBuild = false;
+                    }
+                }*/
+
+
                 //task.Start();
                 //Console.ReadKey();
                 System.Threading.Thread.Sleep(500); // Test it with 5 Seconds, set a window to foreground, and you see it works!
@@ -287,6 +322,25 @@ namespace monitor
             Monitor.ProcessoNome = processoNome;
             Monitor.BrowserURL = browserURL;
             Monitor.ProcessoID = processoID;
+        }
+
+        public static async Task compileStart(string processoNome, DateTime datahora)
+        {
+            string[] fields = { "estacao",
+                                "processo",
+                                "datahorainicio"};
+            string[] values = { "'" + Monitor.NomeEstacao.Trim() + "'",
+                                "'" + processoNome.Trim() + "'",
+                                "'" + datahora.Day.ToString().PadLeft(2, '0') + "/" + datahora.Month.ToString().PadLeft(2, '0') + "/" + datahora.Year.ToString() + " " + datahora.Hour.ToString().PadLeft(2, '0') + ":" + datahora.Minute.ToString().PadLeft(2, '0') + ":" + datahora.Second.ToString().PadLeft(2, '0') + "'" };
+            //string where = "";
+            Monitor.Database.insert("compilacao", fields, values);
+        }
+        public static async Task compileStop(DateTime datahora)
+        {
+            string[] fields = {"datahorafim"};
+            string[] values = { "'" + datahora.Day.ToString().PadLeft(2, '0') + "/" + datahora.Month.ToString().PadLeft(2, '0') + "/" + datahora.Year.ToString() + " " + datahora.Hour.ToString().PadLeft(2, '0') + ":" + datahora.Minute.ToString().PadLeft(2, '0') + ":" + datahora.Second.ToString().PadLeft(2, '0') + "'" };
+            string where = "estacao = " + Monitor.NomeEstacao.Trim();
+            Monitor.Database.update("compilacao", fields, values, where);
         }
         public struct URLDetails
         {
