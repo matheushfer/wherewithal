@@ -183,8 +183,16 @@ namespace monitor
                 {
                     _processo = value;
                     BrowserURLUltimoGravado = BrowserURL;
-                    Task t = new Task(() => Insert());
-                    t.Start();
+                    try
+                    {
+                        Task t = new Task(() => Insert());
+                        t.Start();
+                    }
+                    catch (Exception ex)
+                    {
+                        
+                    }
+                   
                     //Console.WriteLine(_processo.ToString() + " - " + ProcessoNome + " - " + BrowserURL);
 
                     //System.IO.File.AppendAllText(@"C:\Users\Ivan\Desktop\new 4.txt", _processo.ToString() + " - " + ProcessoNome + " - " + BrowserURL + '\n');
@@ -200,16 +208,24 @@ namespace monitor
         public static Boolean graveiStartBuild { get; set; }
         private static async void Insert()
         {
-            string[] fields = { "estacao",
+            try
+            {
+                string[] fields = { "estacao",
                                 "processo",
                                 "url"/*,
                                 "datahorainicio"*/};
-            string[] values = { "'" + NomeEstacao.Trim() + "'",
+                string[] values = { "'" + NomeEstacao.Trim() + "'",
                                 "'" + ProcessoNome.Trim() + "'",
                                 "'" + BrowserURL.Trim() + "'"/*,
                                 "'" + DateTime.Now.Day.ToString().PadLeft(2, '0') + "/" + DateTime.Now.Month.ToString().PadLeft(2, '0') + "/" + DateTime.Now.Year.ToString() + " " + DateTime.Now.Hour.ToString().PadLeft(2, '0') + ":" + DateTime.Now.Minute.ToString().PadLeft(2, '0') + ":" + DateTime.Now.Second.ToString().PadLeft(2, '0') + "'" */};
-            //string where = "";
-            Database.insert("atividade", fields, values);
+                //string where = "";
+                Database.insert("atividade", fields, values);
+            }
+            catch (Exception ex)
+            {
+                
+            }
+            
         }
 
 
@@ -220,101 +236,138 @@ namespace monitor
     {
         static void Main(string[] args)
         {
-            uint procId = 0;
-            var proc = Process.GetCurrentProcess();
-            IntPtr hWnd = GetForegroundWindow();
-            string url = string.Empty;
-            var task = new Task(() => atualizaProcesso(procId, proc.ProcessName, url));
-            Monitor.Database = new ConexaoDB("192.168.9.20", "5433", "postgres", "wherewithal", "wherewithal", true, MsgType.Msg);
-            Monitor.NomeEstacao = Environment.MachineName;
-            Monitor.graveiStartBuild = false;
-            DateTime dataHoraBuildMaisVelho = DateTime.MaxValue;
-            while (true)
+            try
             {
-                //(new List<browserlocation.URLDetails>(browserlocation.InternetExplorer())).ForEach(u =>
-                //            {
-                //                Console.WriteLine("[{0}]\r\n{1}\r\n", u.Title, u.URL);
-                //            });
-
-                hWnd = GetForegroundWindow();
-                procId = 0;
-                GetWindowThreadProcessId(hWnd, out procId);
-                proc = Process.GetProcessById((int)procId);
-
-                //Console.WriteLine(proc.MainModule);
-                if (proc.ProcessName.Equals("firefox") || proc.ProcessName.Equals("chrome")/* || proc.ProcessName.Equals("iexplore")*/) // IE está pegando os endereços de todas as abas, não apenas a que está em foco
+                if (!System.IO.Directory.Exists("XML"))
                 {
-                    url = string.Empty;
-
-                    if (proc.ProcessName.Equals("iexplore"))
-                    {
-                        (new List<URLDetails>(InternetExplorer())).ForEach(u =>
-                        {
-                            url += u.URL;
-                            //Console.WriteLine("[{0}]\r\n{1}\r\n", u.Title, u.URL);
-                        });
-                    }
-                    else
-                    {
-                        url = GetChromeUrl(proc);
-                    }
-
-                    if (url == null)
-                        continue;
-                    url = url.ToLower();
-                    url = url.Replace("http://", string.Empty).Replace("https://", string.Empty).Replace("ftp://", string.Empty);
-                    if (url.Contains("/"))
-                    {
-                        url = url.Substring(0, url.IndexOf("/"));
-                    }
-
-                    //Console.WriteLine(proc.ProcessName + " Url for '" + proc.MainWindowTitle + "' is " + url);
+                    System.IO.Directory.CreateDirectory("XML");
                 }
-                else
+                if (!System.IO.Directory.Exists(@"XML\Erro"))
                 {
-                    url = string.Empty;
+                    System.IO.Directory.CreateDirectory(@"XML\Erro");
                 }
-
-
-                task = new Task(() => atualizaProcesso(procId, proc.ProcessName, url));
-                task.Start();
-
-                /*Process[] localByName = Process.GetProcessesByName("MSBuild");
-                
-                if (localByName.Count() > 0)
+                if (!System.IO.File.Exists(@"XML\Erro\padrao.err"))
                 {
-                    if (Monitor.graveiStartBuild == false)
-                    {
-                        procId = 0;
-                        foreach (Process item in localByName)
-                        {
-                            if (procId < item.Id)
-                            {
-                                procId = (uint)item.Id;
-                                dataHoraBuildMaisVelho = item.StartTime;
-                            }
-                                
-                        }
-                        task = new Task(() => compileStart(localByName[0].ProcessName, dataHoraBuildMaisVelho));
-                        task.Start();
-                        Monitor.graveiStartBuild = true;
-                    }
+                    System.IO.File.Create(@"XML\Erro\padrao.err");
                 }
-                else
-                {
-                    if (Monitor.graveiStartBuild == true)
-                    {
-                        task = new Task(() => compileStop(DateTime.Now));
-                        task.Start();
-                        Monitor.graveiStartBuild = false;
-                    }
-                }*/
-
-
-                //task.Start();
-                //Console.ReadKey();
-                System.Threading.Thread.Sleep(500); // Test it with 5 Seconds, set a window to foreground, and you see it works!
+                    
             }
+            catch (Exception ex)
+            {
+                return;
+            }
+            try
+            {
+                uint procId = 0;
+                var proc = Process.GetCurrentProcess();
+                IntPtr hWnd = GetForegroundWindow();
+                string url = string.Empty;
+                var task = new Task(() => atualizaProcesso(procId, proc.ProcessName, url));
+                Monitor.Database = new ConexaoDB("192.168.9.20", "5433", "postgres", "wherewithal", "wherewithal", true, MsgType.Msg);
+                Monitor.NomeEstacao = Environment.MachineName;
+                Monitor.graveiStartBuild = false;
+                DateTime dataHoraBuildMaisVelho = DateTime.MaxValue;
+                while (true)
+                {
+                    try
+                    {
+
+                        //(new List<browserlocation.URLDetails>(browserlocation.InternetExplorer())).ForEach(u =>
+                        //            {
+                        //                Console.WriteLine("[{0}]\r\n{1}\r\n", u.Title, u.URL);
+                        //            });
+
+                        hWnd = GetForegroundWindow();
+                        procId = 0;
+                        GetWindowThreadProcessId(hWnd, out procId);
+                        proc = Process.GetProcessById((int)procId);
+
+                        //Console.WriteLine(proc.MainModule);
+                        if (proc.ProcessName.Equals("firefox") || proc.ProcessName.Equals("chrome")/* || proc.ProcessName.Equals("iexplore")*/) // IE está pegando os endereços de todas as abas, não apenas a que está em foco
+                        {
+                            url = string.Empty;
+
+                            if (proc.ProcessName.Equals("iexplore"))
+                            {
+                                (new List<URLDetails>(InternetExplorer())).ForEach(u =>
+                                {
+                                    url += u.URL;
+                                    //Console.WriteLine("[{0}]\r\n{1}\r\n", u.Title, u.URL);
+                                });
+                            }
+                            else
+                            {
+                                url = GetChromeUrl(proc);
+                            }
+
+                            if (url == null)
+                                continue;
+                            url = url.ToLower();
+                            url = url.Replace("http://", string.Empty).Replace("https://", string.Empty).Replace("ftp://", string.Empty);
+                            if (url.Contains("/"))
+                            {
+                                url = url.Substring(0, url.IndexOf("/"));
+                            }
+
+                            //Console.WriteLine(proc.ProcessName + " Url for '" + proc.MainWindowTitle + "' is " + url);
+                        }
+                        else
+                        {
+                            url = string.Empty;
+                        }
+
+
+                        task = new Task(() => atualizaProcesso(procId, proc.ProcessName, url));
+                        task.Start();
+
+                        /*Process[] localByName = Process.GetProcessesByName("MSBuild");
+
+                        if (localByName.Count() > 0)
+                        {
+                            if (Monitor.graveiStartBuild == false)
+                            {
+                                procId = 0;
+                                foreach (Process item in localByName)
+                                {
+                                    if (procId < item.Id)
+                                    {
+                                        procId = (uint)item.Id;
+                                        dataHoraBuildMaisVelho = item.StartTime;
+                                    }
+
+                                }
+                                task = new Task(() => compileStart(localByName[0].ProcessName, dataHoraBuildMaisVelho));
+                                task.Start();
+                                Monitor.graveiStartBuild = true;
+                            }
+                        }
+                        else
+                        {
+                            if (Monitor.graveiStartBuild == true)
+                            {
+                                task = new Task(() => compileStop(DateTime.Now));
+                                task.Start();
+                                Monitor.graveiStartBuild = false;
+                            }
+                        }*/
+
+
+
+                    }
+                    catch (Exception ex)
+                    {
+
+                    }
+                    //task.Start();
+                    //Console.ReadKey();
+                    System.Threading.Thread.Sleep(1000); // Test it with 5 Seconds, set a window to foreground, and you see it works!
+                }
+
+            }
+            catch (Exception ex)
+            {
+            }
+           
 
         }
         public static async Task atualizaProcesso(uint processoID = 0, string processoNome = "", string browserURL = "")
@@ -337,7 +390,7 @@ namespace monitor
         }
         public static async Task compileStop(DateTime datahora)
         {
-            string[] fields = {"datahorafim"};
+            string[] fields = { "datahorafim" };
             string[] values = { "'" + datahora.Day.ToString().PadLeft(2, '0') + "/" + datahora.Month.ToString().PadLeft(2, '0') + "/" + datahora.Year.ToString() + " " + datahora.Hour.ToString().PadLeft(2, '0') + ":" + datahora.Minute.ToString().PadLeft(2, '0') + ":" + datahora.Second.ToString().PadLeft(2, '0') + "'" };
             string where = "estacao = " + Monitor.NomeEstacao.Trim();
             Monitor.Database.update("compilacao", fields, values, where);
@@ -359,7 +412,7 @@ namespace monitor
             var shellWindows = new SHDocVw.ShellWindows();
             foreach (SHDocVw.InternetExplorer ie in shellWindows)
             {
-                
+
                 if (ie.Name.Contains("Internet Explorer"))
                 {
                     //Console.WriteLine("");
@@ -376,37 +429,41 @@ namespace monitor
                     //Console.WriteLine("Visible:" + ie.Visible);
                     URLs.Add(new URLDetails() { URL = ie.LocationURL, Title = ie.LocationName });
                 }
-                
+
             }
-                
+
             return URLs.ToArray();
         }
         public static string GetChromeUrl(Process process)
         {
-            if (process == null)
-                throw new ArgumentNullException("process");
-
-            if (process.MainWindowHandle == IntPtr.Zero)
-                return null;
-
-            AutomationElement element = AutomationElement.FromHandle(process.MainWindowHandle);
-            if (element == null)
-                return null;
-
-            AutomationElement edit = element.FindFirst(TreeScope.Subtree, new PropertyCondition(AutomationElement.ControlTypeProperty, ControlType.Edit));
-            if (edit != null)
+            try
             {
-                return ((ValuePattern)edit.GetCurrentPattern(ValuePattern.Pattern)).Current.Value as string;
+                if (process == null)
+                    throw new ArgumentNullException("process");
+
+                if (process.MainWindowHandle == IntPtr.Zero)
+                    return null;
+
+                AutomationElement element = AutomationElement.FromHandle(process.MainWindowHandle);
+                if (element == null)
+                    return null;
+
+                AutomationElement edit = element.FindFirst(TreeScope.Subtree, new PropertyCondition(AutomationElement.ControlTypeProperty, ControlType.Edit));
+                if (edit != null)
+                {
+                    return ((ValuePattern)edit.GetCurrentPattern(ValuePattern.Pattern)).Current.Value as string;
+                }
+                else
+                {
+                    return string.Empty;
+
+                }
             }
-            else
+            catch (Exception)
             {
                 return string.Empty;
-
             }
-
-
-
-
+           
         }
 
         [DllImport("user32.dll")]
